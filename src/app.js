@@ -13,14 +13,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// ✅ FIXED CORS CONFIGURATION
 const corsOptions = {
-    origin: [process.env.ALLOWED_SITE],
-    credentials: true
+    origin: [
+        "https://project-resumebuilder-frontend.vercel.app", // Your frontend URL
+        "http://localhost:5173", // Vite dev server
+        "http://localhost:3000"  // CRA dev server
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
 };
 
 app.use(cors(corsOptions));
 
-// ✅ ADD ONLY THE ESSENTIAL ROOT ROUTE
+// Handle preflight requests
+app.options("*", cors(corsOptions));
+
+// Root route
 app.get("/", (req, res) => {
     res.json({ 
         message: "Resume Builder Backend API is running!",
@@ -34,7 +44,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRouter);
 app.use("/api/resumes", resumeRouter);
 
-// ✅ ADD CATCH-ALL 404 HANDLER
+// 404 handler
 app.use("*", (req, res) => {
     res.status(404).json({
         error: "Route not found",
