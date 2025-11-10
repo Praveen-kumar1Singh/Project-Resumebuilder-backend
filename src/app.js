@@ -13,13 +13,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ✅ FIXED CORS CONFIGURATION
+// ✅ UPDATED CORS - Handle both with and without trailing slash
 const corsOptions = {
-    origin: [
-        "https://project-resumebuilder-frontend.vercel.app", // Your frontend URL
-        "http://localhost:5173", // Vite dev server
-        "http://localhost:3000"  // CRA dev server
-    ],
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            "https://project-resumebuilder-frontend.vercel.app",
+            "https://project-resumebuilder-frontend.vercel.app/", // with slash
+            "http://localhost:5173",
+            "http://localhost:3000"
+        ];
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked for origin:', origin);
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
@@ -43,14 +56,5 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/users", userRouter);
 app.use("/api/resumes", resumeRouter);
-
-// 404 handler
-app.use("*", (req, res) => {
-    res.status(404).json({
-        error: "Route not found",
-        path: req.originalUrl,
-        availableRoutes: ["/", "/api/users", "/api/resumes"]
-    });
-});
 
 export default app;
